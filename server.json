@@ -6,13 +6,13 @@
     "url": "https://github.com/cuttalo/depscope-mcp",
     "source": "github"
   },
-  "version": "0.7.92",
+  "version": "0.8.1",
   "websiteUrl": "https://depscope.dev",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "depscope-mcp",
-      "version": "0.6.1",
+      "version": "0.8.1",
       "transport": {
         "type": "stdio"
       }
