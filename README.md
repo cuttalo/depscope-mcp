@@ -8,6 +8,27 @@
 
 → Backed by [depscope.dev](https://depscope.dev) — 1.2M+ packages indexed, 19,000+ vulnerabilities tracked, real-time.
 
+## What's new in v0.9.0
+
+The MCP server now sends a **system-prompt directive** to your AI client at handshake (`server.instructions`). Claude Code, Cursor, Windsurf and other MCP clients receive a proactive-invocation brief automatically — manual rule files (`CLAUDE.md`, `.cursorrules`, `.windsurfrules`) are now **optional**. Existing rules still work; they're just redundant.
+
+What the model sees at every session start:
+
+- The 19-ecosystem coverage list
+- An "INVOKE PROACTIVELY" directive with explicit triggers (install, version bump, lockfile change, "module not found" errors, library comparison)
+- Three pillars: token-saving, energy-saving, security
+- Standard invocation flow: `check_malicious` → `check_typosquat` → `check_package` → `install_command`
+
+For Claude Code there is also a **companion plugin** that bundles the MCP server with a skill carrying rich frontmatter triggers:
+
+```bash
+git clone https://github.com/cuttalo/depscope-claude-plugin ~/.claude/plugins/depscope
+```
+
+All npm versions `<0.9.0` are now deprecated. Run `npm update -g depscope-mcp` if you installed globally.
+
+---
+
 ## Why this exists
 
 LLMs frequently invent package names that look real but don't exist (`fastapi-turbo`, `lodahs`, `tokio-stream-extras`). When an agent tries to install one, it might hit an attacker's typosquat. **DepScope verifies every package before install.**
