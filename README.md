@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/depscope-mcp.svg)](https://www.npmjs.com/package/depscope-mcp)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0.txt)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-success)](https://modelcontextprotocol.io/)
+[![SafeSkill 95/100](https://img.shields.io/badge/SafeSkill-95%2F100_Verified%20Safe-brightgreen)](https://safeskill.dev/scan/cuttalo-depscope-mcp)
 
 **Package intelligence MCP server for AI agents.** Stops AI coding agents (Claude, ChatGPT, Cursor, Windsurf, Copilot) from installing **hallucinated**, **deprecated**, or **malicious** packages across **19 ecosystems**.
 
