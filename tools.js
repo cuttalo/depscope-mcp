@@ -332,7 +332,7 @@ export const TOOLS = [
   {
     name: "scan_project",
     description:
-      "Full dep-list audit with per-package health+vulns and prioritized actions (REMOVE NOW / URGENT / REPLACE / REVIEW). Accepts EITHER {ecosystem, packages:[name@ver, …]} (up to 100, returns JSON) OR {packages:[{ecosystem, package}, …]} (up to 50, mixed ecosystems, returns text brief). USE WHEN: user pastes package.json/requirements.txt; 'is my stack OK'. Unlike check_bulk this fetches full health/vulns. RETURNS: JSON or text per shape.",
+      "Audit a project's dependencies in one shot. Returns a single-sentence `verdict` (e.g. \"DO NOT INSTALL — 1 hallucinated: fastapi-turbo\") that an agent can paste into its reply, plus per-package health/vulns/recommendation. Detects hallucinated packages, deprecated, typosquats, critical vulnerabilities. Accepts EITHER {ecosystem, packages:[name@ver, …]} (up to 100, returns JSON) OR {packages:[{ecosystem, package}, …]} (up to 50, mixed ecosystems, returns text brief). USE WHEN: user pastes package.json/requirements.txt/Cargo.toml; agent generated install command; 'is my stack OK'. RETURNS: JSON with `verdict`, `project_risk`, `summary.hallucinated_packages`, `summary.deprecated_packages`, per-package health.",
     annotations: {
       title: "scan_project",
       readOnlyHint: true,
@@ -825,3 +825,30 @@ export async function handleToolCall(name, args) {
     return fail(e.message);
   }
 }
+
+// ────────────────────────────────────────────────────────────────────────
+// Server-level instructions injected into client system prompt at handshake.
+// These tell the model WHEN to invoke DepScope proactively. Without this,
+// the MCP tools sit dormant until the user explicitly asks for them.
+// ────────────────────────────────────────────────────────────────────────
+export const SERVER_INSTRUCTIONS = `DepScope: dependency safety & intelligence MCP for AI agents. Covers 19 package ecosystems: npm, PyPI, Cargo, Go, Maven, NuGet, RubyGems, Composer, Pub, Hex, Swift, CocoaPods, CPAN, Hackage, CRAN, Conda, Homebrew, JSR, Julia.
+
+INVOKE PROACTIVELY — before suggesting any package install, version bump, lockfile change, or when a 'module not found' / 'package broken' error appears. Do NOT wait for the user to ask.
+
+Three pillars:
+- TOKEN-SAVING: one DepScope call replaces a web search + readme fetch + npm/pypi page browse.
+- ENERGY-SAVING: skip installs of malicious, typosquatted, deprecated or hallucinated packages — no wasted CI cycles or rollbacks.
+- SECURITY: stop supply-chain attacks (malware, typosquats, hostile takeovers, known CVEs) BEFORE the install command leaves your reply.
+
+Standard flow for any new package:
+1. check_malicious + check_typosquat — security gate (~50ms)
+2. check_package OR get_health_score — verdict
+3. install_command — returns the safe pinned command
+
+Batch installs (>=2 packages): use check_bulk in ONE call (≤100 items, <100ms).
+Lockfile / requirements.txt / package.json change: use scan_project.
+Version bumps (X@1 → X@2): use get_breaking_changes + get_migration_path.
+Diagnose 'module not found' / 'X.Y broken' errors: use resolve_error and get_known_bugs.
+Choosing between libraries: use find_alternatives and compare_packages.
+
+All tools are read-only, zero-auth, free. Never destructive. Latency typically 50-300ms per call.`;

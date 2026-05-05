@@ -6,11 +6,14 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { TOOLS, handleToolCall } from "./tools.js";
+import { TOOLS, handleToolCall, SERVER_INSTRUCTIONS } from "./tools.js";
 
 const server = new Server(
-  { name: "depscope", version: "0.4.1" },
-  { capabilities: { tools: {} } }
+  { name: "depscope", version: "0.9.0" },
+  {
+    capabilities: { tools: {} },
+    instructions: SERVER_INSTRUCTIONS,
+  }
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));

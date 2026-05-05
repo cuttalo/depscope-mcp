@@ -13,7 +13,7 @@ import { randomUUID } from "node:crypto";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { TOOLS, handleToolCall } from "./tools.js";
+import { TOOLS, handleToolCall, SERVER_INSTRUCTIONS } from "./tools.js";
 
 const PORT = Number(process.env.DEPSCOPE_MCP_PORT || 8001);
 const HOST = process.env.DEPSCOPE_MCP_HOST || "127.0.0.1";
@@ -23,8 +23,11 @@ const sessions = new Map();
 
 function createServer() {
   const s = new Server(
-    { name: "depscope", version: "0.7.0" },
-    { capabilities: { tools: {} } }
+    { name: "depscope", version: "0.9.0" },
+    {
+      capabilities: { tools: {} },
+      instructions: SERVER_INSTRUCTIONS,
+    }
   );
   s.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
   s.setRequestHandler(CallToolRequestSchema, async (req) =>
@@ -39,7 +42,7 @@ const httpServer = http.createServer(async (req, res) => {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({
       service: "depscope-mcp-http",
-      version: "0.7.0",
+      version: "0.9.0",
       tools: TOOLS.length,
       endpoint: "/mcp",
       sessions: sessions.size,
@@ -58,12 +61,28 @@ const httpServer = http.createServer(async (req, res) => {
   // New session: only allowed on POST (initialize request).
   if (!transport) {
     if (req.method !== "POST") {
-      res.writeHead(400, { "Content-Type": "application/json" });
+      // Friendly response for GET (browser open) — explain how to connect.
+      res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
-        jsonrpc: "2.0",
-        error: { code: -32000, message: "No session. Send initialize via POST first." },
-        id: null,
-      }));
+        service: "depscope-mcp",
+        protocol: "MCP Streamable HTTP",
+        version: "0.9.0",
+        tools: TOOLS.length,
+        ecosystems: 19,
+        homepage: "https://depscope.dev",
+        docs: "https://depscope.dev/integrate",
+        repository: "https://github.com/cuttalo/depscope-mcp",
+        usage: {
+          claude_desktop_config: {
+            mcpServers: {
+              depscope: { url: "https://mcp.depscope.dev/mcp" }
+            }
+          },
+          local_npx: "npx -y depscope-mcp",
+          curl_initialize: "POST /mcp with body {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},\"clientInfo\":{\"name\":\"my-client\",\"version\":\"1.0\"}}}"
+        },
+        note: "This endpoint speaks the MCP protocol. To list tools, send POST initialize first to obtain a session id.",
+      }, null, 2));
       return;
     }
     transport = new StreamableHTTPServerTransport({
